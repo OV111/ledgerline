@@ -1,0 +1,53 @@
+# Local development stack: `docker compose up --build`
+#
+# Values like ${POSTGRES_PASSWORD:-ledgerline} mean: read it from the .env
+# file, and use "ledgerline" if it is not set. These defaults are for local
+# development only.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ledgerline}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ledgerline}
+      POSTGRES_DB: ${POSTGRES_DB:-ledgerline}
+    ports:
+      # 127.0.0.1 = reachable only from this computer, not from the network.
+      # If port 5432 is already used on your machine, set DB_PORT in .env.
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Postgres runs every .sql file in this folder, in name order, but ONLY
+      # the first time the database is created. After changing a migration,
+      # reset with: docker compose down -v
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    command: ["api"]
+    environment:
+      PORT: "8080"
+      # Not used by the code yet; it is here for when the API connects to the DB.
+      DATABASE_URL: postgres://${POSTGRES_USER:-ledgerline}:${POSTGRES_PASSWORD:-ledgerline}@db:5432/${POSTGRES_DB:-ledgerline}?sslmode=disable
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  listener:
+    build: .
+    command: ["listener"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-ledgerline}:${POSTGRES_PASSWORD:-ledgerline}@db:5432/${POSTGRES_DB:-ledgerline}?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:

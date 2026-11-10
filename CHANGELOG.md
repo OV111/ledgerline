@@ -14,3 +14,4 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Project plan PDF in `docs/project-plan.pdf`.
 - README now contains the full project plan (from the PDF) plus setup steps.
 - GitHub Actions CI: gofmt, `go vet`, `go test`, web build.
+- Stage 1 docs: `docs/prd.md` (frozen scope), `docs/design.md` (architecture, unique amount, ledger, security), ADRs 001–006.

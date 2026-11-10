@@ -13,8 +13,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-ledgerline}
     ports:
       # 127.0.0.1 = reachable only from this computer, not from the network.
-      # If port 5432 is already used on your machine, set DB_PORT in .env.
-      - "127.0.0.1:${DB_PORT:-5432}:5432"
+      # 5440 on your computer (not the usual 5432, which other projects use);
+      # inside Docker it stays 5432. Change with DB_PORT in .env.
+      - "127.0.0.1:${DB_PORT:-5440}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
       # Postgres runs every .sql file in this folder, in name order, but ONLY
@@ -31,11 +32,13 @@ services:
     build: .
     command: ["api"]
     environment:
-      PORT: "8080"
+      PORT: "8090"
       # Not used by the code yet; it is here for when the API connects to the DB.
       DATABASE_URL: postgres://${POSTGRES_USER:-ledgerline}:${POSTGRES_PASSWORD:-ledgerline}@db:5432/${POSTGRES_DB:-ledgerline}?sslmode=disable
     ports:
-      - "8080:8080"
+      # 127.0.0.1: only this computer can call the API, not the whole network.
+      # Change the left number with API_PORT in .env.
+      - "127.0.0.1:${API_PORT:-8090}:8090"
     depends_on:
       db:
         condition: service_healthy

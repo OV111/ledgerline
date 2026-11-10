@@ -20,3 +20,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `migrations/002_users.sql`: `users` (unique email and wallet) and `sessions` tables. Local DB needs `docker compose down -v` once.
 - `internal/ratelimit`: max 10 password attempts per IP per minute (429 + `Retry-After`).
 - Dependencies: `golang.org/x/crypto` v0.31.0 (bcrypt, Keccak), `github.com/jackc/pgx/v5` v5.7.1 (PostgreSQL driver).
+
+### Changed
+- Own port block to avoid clashes: API 8090, PostgreSQL 5440, test DB 5441, web 5180. All bound to `127.0.0.1` (API was open to the network on `0.0.0.0:8080`).

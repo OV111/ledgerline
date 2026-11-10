@@ -257,11 +257,19 @@ list instead of moving the deadline.
 
 ```sh
 docker compose up --build
-curl http://localhost:8080/healthz
+curl http://localhost:8090/healthz
 ```
 
-If port 5432 is already in use on your machine, copy `.env.example` to `.env`
-and change `DB_PORT`.
+Ports (all on `127.0.0.1`, chosen to avoid the common 5432/8080/5173):
+
+| Port | Service |
+| --- | --- |
+| 8090 | API |
+| 5440 | PostgreSQL |
+| 5441 | Throwaway test database |
+| 5180 | Web dev server |
+
+To change one, copy `.env.example` to `.env` and edit it.
 
 The migrations run only when the database is first created. After changing a
 migration, reset the database with `docker compose down -v`.
@@ -269,12 +277,14 @@ migration, reset the database with `docker compose down -v`.
 ### Run without Docker
 
 ```sh
-go run ./cmd/api        # API on http://localhost:8080
-go run ./cmd/listener   # listener (heartbeat only for now)
+docker compose up -d db  # the API needs the database
+DATABASE_URL="postgres://ledgerline:ledgerline@localhost:5440/ledgerline?sslmode=disable" go run ./cmd/api
+                         # API on http://localhost:8090
+go run ./cmd/listener    # listener (heartbeat only for now)
 
 cd web
 npm install
-npm run dev             # frontend on http://localhost:5173
+npm run dev              # frontend on http://localhost:5180
 ```
 
 ### Before finishing any change
@@ -282,5 +292,15 @@ npm run dev             # frontend on http://localhost:5173
 ```sh
 gofmt -l .      # should print nothing
 go vet ./...
-go test ./...
+go test ./...   # database tests are skipped without TEST_DATABASE_URL
+```
+
+To also run the database tests, start a throwaway Postgres on port 5441.
+**The tests delete all users and sessions**, so never point them at a real database.
+
+```sh
+docker run -d --rm --name ledgerline-testdb -e POSTGRES_PASSWORD=test \
+  -p 127.0.0.1:5441:5432 -v "$PWD/migrations:/docker-entrypoint-initdb.d:ro" postgres:16-alpine
+TEST_DATABASE_URL="postgres://postgres:test@localhost:5441/postgres?sslmode=disable" go test -p 1 ./...
+docker stop ledgerline-testdb   # deletes it (--rm)
 ```

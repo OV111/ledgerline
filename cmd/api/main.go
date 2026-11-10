@@ -20,7 +20,8 @@ func main() {
 	// PORT can be set from the environment (Docker Compose does this).
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		// Ledgerline's own port (not the common 8080). See .env.example.
+		port = "8090"
 	}
 
 	// DATABASE_URL is required: without a database the API can't do anything

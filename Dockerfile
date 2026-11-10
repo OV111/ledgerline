@@ -4,7 +4,11 @@
 # Stage 1: compile. This stage has the Go toolchain and is thrown away after.
 FROM golang:1.22-alpine AS build
 WORKDIR /src
-COPY go.mod ./
+# go.sum holds checksums of the dependencies; Go refuses to build without it.
+# Downloading in its own step lets Docker cache it: code changes don't
+# re-download everything.
+COPY go.mod go.sum ./
+RUN go mod download
 COPY cmd ./cmd
 COPY internal ./internal
 # CGO_ENABLED=0 makes self-contained binaries that run on plain Alpine.

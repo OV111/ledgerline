@@ -183,6 +183,19 @@ sum of on-chain transfers to the wallet. Any difference is flagged.
 The payment link is signed with a server secret (`LINK_SECRET`), and the
 webhook with a per-merchant secret. Both live in environment variables.
 
+**Login (built early, in `feat/auth`).** Session = random 32-byte token in an
+`HttpOnly; Secure; SameSite=Lax` cookie; the DB stores only its SHA-256.
+Changing the wallet needs the password again and logs out other sessions.
+`/signup`, `/login`, `/me/wallet`: max 10 attempts per IP per minute.
+
+**Known limits (accepted for v1):**
+- Anyone can register a wallet they don't own, blocking the real owner
+  (fix: "sign with your wallet" proof, v2).
+- Signup's `409 email taken` reveals that an email is registered (fix needs
+  email verification, out of scope).
+- Rate limit is per IP and in memory: many IPs only slow an attacker down.
+  Behind a proxy (stage 6) the client IP must come from the proxy's header.
+
 ## 8. Open points
 
 None blocking Stage 2. Stage 3 will confirm the exact RPC provider and the
